@@ -1,0 +1,102 @@
+# News Article Dataset Information
+
+## Overview
+Dataset of 4,000 news articles pre-categorized into 4 balanced classes.
+
+## File: article_data.csv
+
+### Shape
+- Rows: 4,000 articles
+- Columns: 2 (Article text + Category label)
+
+### Columns
+
+#### 1. Article
+- Type: String (text)
+- Description: Full text content of the news article
+- Length: Typically 30-50 words per article
+- Notes: Cleaned text, ready for NLP processing
+
+#### 2. Category
+- Type: Integer (0-3)
+- Description: News category classification
+- Values:
+  - 0: World News
+  - 1: Sports News
+  - 2: Business News
+  - 3: Science & Technology News
+
+### Class Distribution
+- Class 0 (World): 1,000 articles (25%)
+- Class 1 (Sports): 1,000 articles (25%)
+- Class 2 (Business): 1,000 articles (25%)
+- Class 3 (Sci/Tech): 1,000 articles (25%)
+
+**Status**: Perfectly balanced dataset
+
+### Data Characteristics
+
+#### Vocabulary
+- Unique words: ~5,000+
+- Stopwords: Retained in dataset
+- Special characters: Minimal/removed
+
+#### Article Statistics
+- Average length: 35-45 words
+- Min length: ~5 words
+- Max length: ~100 words
+- Distribution: Right-skewed (few long articles)
+
+#### Processing
+- Missing values: None
+- Duplicate articles: None
+- Invalid entries: None
+- Already cleaned and validated
+
+## Usage
+
+### Loading the Data
+```python
+import pandas as pd
+
+# Load dataset
+df = pd.read_csv('data/article_data.csv')
+
+# Check shape
+print(df.shape)  # (4000, 2)
+
+# View sample
+print(df.head())
+```
+
+### Data Exploration
+```python
+# Check class distribution
+print(df['Category'].value_counts())
+
+# Check article lengths
+df['length'] = df['Article'].apply(lambda x: len(x.split()))
+print(df['length'].describe())
+
+# View sample articles per category
+for cat in [0, 1, 2, 3]:
+    print(f"\nCategory {cat} sample:")
+    print(df[df['Category'] == cat]['Article'].iloc[0])
+```
+
+## Notes for Analysis
+
+1. **Class Balance**: Ideal for training classification models without needing class weights
+2. **Text Length**: Short articles are good for embedding-based models
+3. **Vocabulary Diversity**: Sufficient for learning category-specific patterns
+4. **No Preprocessing Needed**: Data is already cleaned and ready to use
+5. **Train-Test Split Recommended**:
+   - Training: 80% (3,200 articles)
+   - Validation: 10% (400 articles)
+   - Testing: 10% (400 articles)
+
+## Citation/Attribution
+Dataset provided as part of a news categorization case study for educational purposes.
+
+## Contact
+For questions about dataset: See project README.md

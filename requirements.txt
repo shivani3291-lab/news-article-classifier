@@ -1,0 +1,49 @@
+# Core Data Science Libraries
+pandas==2.0.3
+numpy==1.24.3
+matplotlib==3.7.2
+seaborn==0.12.2
+scikit-learn==1.3.0
+
+# NLP & Text Processing
+sentence-transformers==2.2.2
+transformers==4.31.0
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
+
+# Deep Learning Support
+bitsandbytes==0.41.0
+accelerate==0.20.3
+sentencepiece==0.1.99
+
+# Visualization & Utilities
+wordcloud==1.9.2
+Pillow==10.0.0
+
+# Jupyter & Notebooks
+jupyter==1.0.0
+ipython==8.14.0
+jupyterlab==4.0.4
+
+# Utilities
+python-dotenv==1.0.0
+tqdm==4.66.1
+
+# Optional: For deployment
+# streamlit==1.25.0
+# fastapi==0.100.0
+# uvicorn==0.23.1
+
+# Optional: For model serving
+# gunicorn==21.2.0
+
+# Optional: For hyperparameter tuning visualization
+# optuna==3.3.0
+
+# Optional: For data versioning
+# dvc==3.13.1
+streamlit==1.28.0
+sentence-transformers==2.2.2
+transformers==4.31.0
+torch==2.0.1
