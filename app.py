@@ -6,11 +6,13 @@ from transformers import pipeline
 
 st.set_page_config(page_title="News Classifier", layout="wide")
 
+MODEL_NAME = "google/flan-t5-base"
+
 
 @st.cache_resource(show_spinner=False)
 def load_model():
     """Load and cache the FLAN-T5 pipeline once per app session."""
-    return pipeline("text2text-generation", model="google/flan-t5-large")
+    return pipeline("text2text-generation", model=MODEL_NAME)
 
 
 def normalize_prediction(text: str) -> str:
@@ -54,7 +56,7 @@ st.caption("Standalone deployment app (no notebook/Colab required)")
 
 with st.sidebar:
     st.header("About")
-    st.write("Model: FLAN-T5 Large")
+    st.write("Model: FLAN-T5 Base")
     st.write("Task: 4-class news categorization")
     st.write("Classes: World, Sports, Business, Sci/Tech")
 
@@ -87,7 +89,7 @@ if classify_clicked:
         with st.spinner("Loading model and generating prediction..."):
             generator = load_model()
             prompt = build_prompt(article)
-            output = generator(prompt, max_length=8, do_sample=False)
+            output = generator(prompt, max_new_tokens=4, do_sample=False)
             raw_prediction = output[0]["generated_text"]
             prediction = normalize_prediction(raw_prediction)
 
@@ -105,7 +107,8 @@ st.markdown(
     """
 ### Notes
 - This app runs independently and does not require notebook upload.
-- For faster/cheaper inference in production, consider a smaller model or a tuned classical pipeline.
+- This deployment uses FLAN-T5 Base to keep the free hosting footprint manageable.
+- For faster/cheaper inference in production, consider a tuned classical pipeline.
 - Repository: https://github.com/shivani3291-lab/news-article-classifier
 """
 )
