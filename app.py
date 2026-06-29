@@ -1,65 +1,79 @@
 import re
+from collections import Counter
 
 import streamlit as st
-from transformers import pipeline
 
 
 st.set_page_config(page_title="News Classifier", layout="wide")
 
-MODEL_NAME = "google/flan-t5-base"
+
+CATEGORY_KEYWORDS = {
+    "World": {
+        "government", "election", "minister", "diplomacy", "international", "global",
+        "country", "countries", "war", "peace", "united nations", "foreign", "world",
+        "border", "summit", "trade talks", "embassy", "president",
+    },
+    "Sports": {
+        "game", "team", "player", "season", "match", "coach", "league", "score",
+        "goal", "tournament", "championship", "athlete", "sports", "win", "loss",
+        "football", "basketball", "cricket", "tennis", "soccer",
+    },
+    "Business": {
+        "market", "stocks", "stock", "company", "companies", "revenue", "profit",
+        "loss", "economy", "economic", "finance", "financial", "bank", "banks",
+        "investor", "investors", "trade", "merger", "startup", "sales", "earnings",
+    },
+    "Sci/Tech": {
+        "technology", "tech", "science", "scientists", "research", "researchers",
+        "software", "hardware", "internet", "ai", "artificial intelligence", "robot",
+        "robots", "space", "satellite", "device", "chip", "medical", "health", "data",
+    },
+}
 
 
-@st.cache_resource(show_spinner=False)
-def load_model():
-    """Load and cache the FLAN-T5 pipeline once per app session."""
-    return pipeline("text2text-generation", model=MODEL_NAME)
+def classify_article(article_text: str) -> tuple[str, dict[str, int]]:
+    """Score each category by keyword overlap and return the best match."""
+    normalized = re.sub(r"[^a-z0-9\s]", " ", article_text.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    tokens = normalized.split()
+    token_counts = Counter(tokens)
+
+    scores: dict[str, int] = {}
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        score = 0
+        for keyword in keywords:
+            if " " in keyword:
+                if keyword in normalized:
+                    score += 2
+            else:
+                score += token_counts.get(keyword, 0)
+        scores[category] = score
+
+    best_category = max(scores, key=scores.get)
+    return best_category, scores
 
 
-def normalize_prediction(text: str) -> str:
-    """Normalize model output to one of the supported classes."""
-    cleaned = text.strip().lower()
-    cleaned = re.sub(r"[^a-z/ ]", "", cleaned)
-
-    if "sport" in cleaned:
-        return "Sports"
-    if "business" in cleaned or "finance" in cleaned or "economy" in cleaned:
-        return "Business"
-    if "sci" in cleaned or "tech" in cleaned or "science" in cleaned or "technology" in cleaned:
-        return "Sci/Tech"
-    if "world" in cleaned or "international" in cleaned or "global" in cleaned:
-        return "World"
-    return "Unknown"
-
-
-def build_prompt(article_text: str) -> str:
-    """Create a constrained prompt for reliable single-label classification."""
-    return f"""Classify the following news article into exactly one label.
-
-Allowed labels:
-- World
-- Sports
-- Business
-- Sci/Tech
-
-Rules:
-- Return only one label from the list.
-- Do not add explanations.
-
-Article:
-{article_text[:1000]}
-
-Label:"""
+def build_explanation(category: str, scores: dict[str, int]) -> str:
+    ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    runner_up = ordered[1][0] if len(ordered) > 1 else "N/A"
+    return f"Predicted {category}. Next best match: {runner_up}."
 
 
 st.title("News Article Classifier")
-st.caption("Standalone deployment app (no notebook/Colab required)")
+st.caption("Free deployment demo that runs directly on Streamlit Cloud")
 
 with st.sidebar:
     st.header("About")
-    st.write("Model: FLAN-T5 Base")
+    st.write("Deployment model: lightweight keyword classifier")
     st.write("Task: 4-class news categorization")
     st.write("Classes: World, Sports, Business, Sci/Tech")
+    st.write("Notebook still contains the full ML experiments and results.")
 
+
+sample_article = (
+    "The central bank announced a rate cut after inflation slowed for a third month, "
+    "boosting banking and retail stocks in early trading."
+)
 
 article = st.text_area(
     "Enter news article text",
@@ -71,11 +85,8 @@ col1, col2 = st.columns([1, 4])
 with col1:
     classify_clicked = st.button("Classify", type="primary", use_container_width=True)
 with col2:
-    if st.button("Use sample text", use_container_width=True):
-        st.session_state["sample"] = (
-            "The central bank announced a rate cut after inflation slowed for a third month, "
-            "boosting banking and retail stocks in early trading."
-        )
+    if st.button("Load sample text", use_container_width=True):
+        st.session_state["sample"] = sample_article
 
 if st.session_state.get("sample") and not article:
     article = st.session_state["sample"]
@@ -86,29 +97,24 @@ if classify_clicked:
     if not article.strip():
         st.warning("Please enter article text before classifying.")
     else:
-        with st.spinner("Loading model and generating prediction..."):
-            generator = load_model()
-            prompt = build_prompt(article)
-            output = generator(prompt, max_new_tokens=4, do_sample=False)
-            raw_prediction = output[0]["generated_text"]
-            prediction = normalize_prediction(raw_prediction)
+        prediction, scores = classify_article(article)
 
-        if prediction == "Unknown":
-            st.error("Could not confidently map the model output to a supported class.")
-            st.write("Raw model output:", raw_prediction)
-        else:
-            st.success(f"Predicted Category: {prediction}")
-            st.write(f"Raw model output: {raw_prediction}")
-            st.write(f"Article length: {len(article.split())} words")
+        st.success(f"Predicted Category: {prediction}")
+        st.write(build_explanation(prediction, scores))
+        st.write(f"Article length: {len(article.split())} words")
+
+        st.subheader("Category Scores")
+        score_rows = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        st.table({"Category": [row[0] for row in score_rows], "Score": [row[1] for row in score_rows]})
 
 
 st.markdown("---")
 st.markdown(
     """
 ### Notes
-- This app runs independently and does not require notebook upload.
-- This deployment uses FLAN-T5 Base to keep the free hosting footprint manageable.
-- For faster/cheaper inference in production, consider a tuned classical pipeline.
+- This app is a free, standalone deployment demo that does not depend on notebooks or GPU packages.
+- The repository still contains the full notebook with the ML workflow, model comparison, and 92% result.
+- For a production API, the next step would be exporting the trained model and loading it here.
 - Repository: https://github.com/shivani3291-lab/news-article-classifier
 """
 )
