@@ -60,14 +60,17 @@ def build_explanation(category: str, scores: dict[str, int]) -> str:
 
 
 st.title("News Article Classifier")
-st.caption("Free deployment demo that runs directly on Streamlit Cloud")
+st.caption(
+    "NLP text-classification project — the trained model reaches 92% accuracy; "
+    "this live demo uses a lightweight rule-based classifier for instant, dependency-free hosting."
+)
 
 with st.sidebar:
-    st.header("About")
-    st.write("Deployment model: lightweight keyword classifier")
-    st.write("Task: 4-class news categorization")
+    st.header("About this project")
+    st.write("End-to-end NLP pipeline for 4-class news categorization.")
     st.write("Classes: World, Sports, Business, Sci/Tech")
-    st.write("Notebook still contains the full ML experiments and results.")
+    st.write("Full preprocessing, model training, and evaluation live in the project notebook (92% accuracy).")
+    st.write("This hosted demo swaps in a fast keyword-based classifier so it runs on Streamlit Cloud without GPU/ML dependencies.")
 
 
 sample_article = (
@@ -75,21 +78,24 @@ sample_article = (
     "boosting banking and retail stocks in early trading."
 )
 
-article = st.text_area(
-    "Enter news article text",
-    height=220,
-    placeholder="Paste a news article paragraph here...",
-)
+text_area_placeholder = st.empty()
 
 col1, col2 = st.columns([1, 4])
 with col1:
     classify_clicked = st.button("Classify", type="primary", use_container_width=True)
 with col2:
     if st.button("Load sample text", use_container_width=True):
-        st.session_state["sample"] = sample_article
+        st.session_state["article_text"] = sample_article
+        st.session_state["_sample_loaded_notice"] = True
 
-if st.session_state.get("sample") and not article:
-    article = st.session_state["sample"]
+article = text_area_placeholder.text_area(
+    "Enter news article text",
+    height=220,
+    placeholder="Paste a news article paragraph here...",
+    key="article_text",
+)
+
+if st.session_state.pop("_sample_loaded_notice", False):
     st.info("Sample text loaded. Click Classify.")
 
 
@@ -111,10 +117,10 @@ if classify_clicked:
 st.markdown("---")
 st.markdown(
     """
-### Notes
-- This app is a free, standalone deployment demo that does not depend on notebooks or GPU packages.
-- The repository still contains the full notebook with the ML workflow, model comparison, and 92% result.
-- For a production API, the next step would be exporting the trained model and loading it here.
-- Repository: https://github.com/shivani3291-lab/news-article-classifier
+### About the build
+- Full NLP workflow — preprocessing, model training, and comparison across models — is documented in the project notebook, with a best result of 92% accuracy.
+- This deployed demo runs a lightweight rule-based classifier instead of the trained model, so it stays fast and dependency-free on Streamlit Cloud.
+- Natural next step for production: export the trained model and serve it directly from this app.
+- Source code & notebook: https://github.com/shivani3291-lab/news-article-classifier
 """
 )
