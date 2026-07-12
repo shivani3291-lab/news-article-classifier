@@ -6,12 +6,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  ping:
+  wake:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping app
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Playwright
         run: |
-          curl -sS -L --fail --max-time 30 \
-            -c cookies.txt -b cookies.txt \
-            -o /dev/null -w "HTTP %{http_code}\n" \
-            https://news-article-classifier-eyd497t5avdhywvkmqbzu3.streamlit.app/
+          pip install playwright
+          playwright install --with-deps chromium
+      - name: Visit app and wake if asleep
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://news-article-classifier-eyd497t5avdhywvkmqbzu3.streamlit.app/"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(URL, wait_until="networkidle", timeout=60000)
+
+              wake_button = page.get_by_role("button", name="Yes, get this app back up!")
+              try:
+                  wake_button.wait_for(timeout=5000)
+                  print("App is asleep — clicking wake button")
+                  wake_button.click()
+                  page.wait_for_timeout(30000)
+              except Exception:
+                  print("App already awake")
+
+              browser.close()
+          PY
